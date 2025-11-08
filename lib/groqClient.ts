@@ -19,7 +19,7 @@ export async function sendMessageToAI(
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'mixtral', // Fast and cheap model
+        model: 'llama-3.3-70b-versatile', // Fast and cheap model
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages

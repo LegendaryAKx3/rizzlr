@@ -7,6 +7,7 @@ export interface AIMatch {
   personality: string;
   image: string;
   conversationStyle: string;
+  opener?: string; // Random opener from opener_examples
 }
 
 export interface Message {
