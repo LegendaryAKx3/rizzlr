@@ -20,3 +20,12 @@ export interface Chat {
   matchId: string;
   messages: Message[];
 }
+
+export interface UserCard {
+  userId: string;
+  name: string;
+  age: number;
+  bio: string;
+  interests: string[];
+  imageUrl?: string;
+}
