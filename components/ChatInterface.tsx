@@ -16,7 +16,7 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: `Hey! I'm ${match.name}. ${match.bio} What's up?`,
+      content: match.opener || `Hey! I'm ${match.name}. What's up?`,
       sender: 'ai',
       timestamp: new Date()
     }
