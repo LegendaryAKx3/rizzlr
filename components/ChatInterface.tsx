@@ -5,7 +5,8 @@ import { AIMatch, Message } from '@/types';
 import { sendMessageToAI } from '@/lib/groqClient';
 import { Send, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { gradeConversation } from '@/lib/gradeConversation';
 
 interface ChatInterfaceProps {
   match: AIMatch;
@@ -23,7 +24,11 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [grade, setGrade] = useState<any>(null);
+  const [liveHint, setLiveHint] = useState<string>('');
+  const [showLiveHint, setShowLiveHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,6 +36,83 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Live feedback as user types
+  useEffect(() => {
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+    }
+
+    if (input.length > 5) {
+      hintTimeoutRef.current = setTimeout(async () => {
+        const hint = await getTypingHint(input);
+        setLiveHint(hint);
+        setShowLiveHint(true);
+      }, 800);
+    } else {
+      setShowLiveHint(false);
+    }
+
+    return () => {
+      if (hintTimeoutRef.current) {
+        clearTimeout(hintTimeoutRef.current);
+      }
+    };
+  }, [input, messages]);
+
+  const getTypingHint = async (text: string): Promise<string> => {
+    try {
+      // Get last few messages for context
+      const recentMessages = messages.slice(-6).map(m => 
+        `${m.sender === 'user' ? 'You' : match.name}: ${m.content}`
+      ).join('\n');
+
+      const conversationHistory = [{
+        role: 'system',
+        content: `You are a dating coach giving BRIEF real-time feedback. Analyze the message they're about to send in context of the conversation. Give ONE SHORT tip (max 10 words) with an emoji. Be specific about THEIR message content. Examples:
+- "� Great! That question shows real interest"
+- "🤔 Too generic - be more specific about her hobby"
+- "🔥 Love the playful energy!"
+- "💡 Reference what she just said about traveling"
+- "⚠️ Too forward - dial it back a bit"
+- "✨ Perfect follow-up question!"
+
+Match personality: ${match.personality}
+Conversation style: ${match.conversationStyle}`
+      }, {
+        role: 'user',
+        content: `Recent conversation:\n${recentMessages}\n\nThey're typing: "${text}"\n\nGive ONE brief specific tip about THIS message:`
+      }];
+
+      const response = await sendMessageToAI(conversationHistory, '');
+      return response.trim();
+    } catch (error) {
+      console.error('Error getting live hint:', error);
+      return "� Keep it natural and engaging!";
+    }
+  };
+
+  // Update grade after each user message
+  useEffect(() => {
+    const updateGrade = async () => {
+      const userMessages = messages
+        .filter(m => m.sender === 'user')
+        .map(m => m.content);
+      
+      if (userMessages.length > 0) {
+        const conversationMessages = messages.map(m => ({
+          role: m.sender === 'user' ? 'user' : 'assistant',
+          content: m.content,
+          timestamp: m.timestamp
+        }));
+        
+        const result = await gradeConversation(conversationMessages, userMessages);
+        setGrade(result);
+      }
+    };
+
+    updateGrade();
   }, [messages]);
 
   const handleSend = async () => {
@@ -75,9 +157,23 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
     }
   };
 
+  const getGradeColor = (grade: string) => {
+    switch (grade) {
+      case 'S': return 'from-purple-500 to-pink-500';
+      case 'A': return 'from-green-500 to-emerald-500';
+      case 'B': return 'from-blue-500 to-cyan-500';
+      case 'C': return 'from-yellow-500 to-orange-500';
+      case 'D': return 'from-orange-500 to-red-500';
+      case 'F': return 'from-red-500 to-gray-500';
+      default: return 'from-gray-400 to-gray-500';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-200 px-4 py-6">
-      <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-4xl flex-col gap-5">
+    <div className="flex min-h-screen bg-gray-200">
+      {/* Main Chat Area */}
+      <div className="flex-1 px-4 py-6">
+        <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-4xl flex-col gap-5">
         {/* Header */}
         <div className="flex items-center gap-4 rounded-2xl border border-gray-300 bg-gray-200 px-6 py-4 shadow-lg">
           <button
@@ -101,64 +197,142 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
             <h2 className="text-xl font-semibold text-gray-900">{match.name}, {match.age}</h2>
             <p className="text-sm text-gray-500">Online · {match.personality}</p>
           </div>
+          
+          {/* Inline Grade Badge */}
+          {grade && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="flex items-center gap-2"
+            >
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${getGradeColor(grade.grade)} shadow-lg`}>
+                <span className="text-2xl font-bold text-white">{grade.grade}</span>
+                <div className="text-white/90 text-xs">
+                  <div className="font-semibold">{grade.score}</div>
+                  <div className="text-[10px]">Rizz Score</div>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-hidden rounded-2xl border border-gray-300 bg-gray-200 p-6 shadow-lg">
-          <div className="flex h-full flex-col space-y-4 overflow-y-auto pr-2">
-            {messages.map((message) => (
+        <div className="flex-1 overflow-hidden rounded-2xl border border-gray-300 bg-gray-200 shadow-lg">
+          <div className="flex h-full">
+            {/* Chat Messages */}
+            <div className="flex-1 p-6">
+              <div className="flex h-full flex-col space-y-4 overflow-y-auto pr-2">
+                {messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs rounded-2xl px-5 py-3 text-sm shadow-md md:max-w-md ${
+                        message.sender === 'user'
+                          ? 'bg-gray-400 text-gray-900'
+                          : 'bg-gray-300 border border-gray-400 text-gray-800'
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </motion.div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl bg-gray-300 border border-gray-400 px-4 py-3 shadow-md">
+                      <div className="flex items-center gap-1">
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.1s' }} />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.2s' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Inline Grade Sidebar */}
+            {grade && (
               <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="w-72 border-l border-gray-300 bg-gray-100/50 p-4 overflow-y-auto"
               >
-                <div
-                  className={`max-w-xs rounded-2xl px-5 py-3 text-sm shadow-md md:max-w-md ${
-                    message.sender === 'user'
-                      ? 'bg-gray-400 text-gray-900'
-                      : 'bg-gray-300 border border-gray-400 text-gray-800'
-                  }`}
-                >
-                  {message.content}
-                </div>
-              </motion.div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl bg-gray-300 border border-gray-400 px-4 py-3 shadow-md">
-                  <div className="flex items-center gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.1s' }} />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.2s' }} />
+                <div className="space-y-4">
+                  <p className="text-xs text-gray-600 font-medium">{grade.feedback}</p>
+
+                  {/* Compact Breakdown */}
+                  <div className="space-y-2">
+                    {Object.entries(grade.breakdown).map(([key, value]: [string, any]) => (
+                      <div key={key}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="capitalize text-gray-700">{key}</span>
+                          <span className="font-semibold text-gray-900">{value}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-300 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${value}%` }}
+                            transition={{ duration: 0.5 }}
+                            className={`h-full bg-gradient-to-r ${getGradeColor(grade.grade)}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Compact Tips */}
+                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl p-3 border border-gray-200">
+                    <h4 className="font-semibold text-xs text-gray-800 mb-1">💡 Tips</h4>
+                    <ul className="text-[10px] text-gray-700 space-y-0.5">
+                      {grade.breakdown.engagement < 70 && <li>• Ask more questions</li>}
+                      {grade.breakdown.chemistry < 70 && <li>• Be more playful</li>}
+                      {grade.breakdown.flow < 70 && <li>• Keep it natural</li>}
+                      <li>• Stay confident</li>
+                    </ul>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
         {/* Input Area */}
-        <div className="rounded-full border border-gray-300 bg-gray-200 p-2 shadow-lg">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type your message..."
-              className="flex-1 bg-transparent px-4 py-2 text-sm text-gray-700 placeholder:text-gray-500 focus:outline-none"
-              disabled={isLoading}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-600 text-white transition hover:bg-gray-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+        <div className="relative">
+          {showLiveHint && input.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute -top-14 left-0 right-0 mx-4 rounded-xl border border-gray-300 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 shadow-lg"
             >
-              <Send className="h-4 w-4" />
-            </button>
+              <p className="text-xs font-medium text-gray-800">{liveHint}</p>
+            </motion.div>
+          )}
+          <div className="rounded-full border border-gray-300 bg-gray-200 p-2 shadow-lg">
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Type your message..."
+                className="flex-1 bg-transparent px-4 py-2 text-sm text-gray-700 placeholder:text-gray-500 focus:outline-none"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-600 text-white transition hover:bg-gray-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

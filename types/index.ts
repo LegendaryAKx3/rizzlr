@@ -20,4 +20,15 @@ export interface Message {
 export interface Chat {
   matchId: string;
   messages: Message[];
+  grade?: {
+    score: number;
+    grade: 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+    feedback: string;
+    breakdown: {
+      engagement: number;
+      flow: number;
+      chemistry: number;
+      timing: number;
+    };
+  };
 }
