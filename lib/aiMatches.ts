@@ -1,5 +1,5 @@
 import { AIMatch } from '@/types';
-import profilesData from '@/profiles/profiles.json';
+import profilesData from '@/profiles/profilesnew.json';
 
 // Convert profiles.json format to AIMatch format
 export const aiMatches: AIMatch[] = profilesData.map((profile: any) => {
@@ -9,6 +9,12 @@ export const aiMatches: AIMatch[] = profilesData.map((profile: any) => {
     ? openers[Math.floor(Math.random() * openers.length)]
     : `Hey! I'm ${profile.display_name}. ${profile.bio}`;
   
+  // Fix image path - prepend / if it doesn't start with http or /
+  let imagePath = profile.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile.display_name)}`;
+  if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+    imagePath = '/' + imagePath;
+  }
+
   return {
     id: profile.id,
     name: profile.display_name,
@@ -16,7 +22,7 @@ export const aiMatches: AIMatch[] = profilesData.map((profile: any) => {
     bio: profile.bio,
     interests: profile.interests?.slice(0, 5) || [],
     personality: profile.persona_card?.tone || 'friendly',
-    image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile.display_name)}`,
+    image: imagePath,
     opener: randomOpener,
     conversationStyle: `You are ${profile.display_name}, a real ${profile.age}-year-old ${profile.occupation}. ${profile.bio}
   
