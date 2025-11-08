@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { AIMatch, Message } from '@/types';
 import { sendMessageToAI } from '@/lib/groqClient';
 import { Send, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 interface ChatInterfaceProps {
@@ -75,79 +76,89 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-md p-4 flex items-center gap-4">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-full transition"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <img
-          src={match.image}
-          alt={match.name}
-          className="w-12 h-12 rounded-full"
-        />
-        <div>
-          <h2 className="font-bold text-lg">{match.name}</h2>
-          <p className="text-sm text-gray-500">Online</p>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs md:max-w-md px-4 py-2 rounded-2xl ${
-                message.sender === 'user'
-                  ? 'bg-pink-500 text-white rounded-br-none'
-                  : 'bg-white text-gray-800 rounded-bl-none shadow'
-              }`}
-            >
-              {message.content}
-            </div>
-          </motion.div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white px-4 py-2 rounded-2xl rounded-bl-none shadow">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="bg-white border-t p-4">
-        <div className="flex gap-2 max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-pink-500"
-            disabled={isLoading}
-          />
+    <div className="min-h-screen bg-gray-200 px-4 py-6">
+      <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-4xl flex-col gap-5">
+        {/* Header */}
+        <div className="flex items-center gap-4 rounded-2xl border border-gray-300 bg-gray-200 px-6 py-4 shadow-lg">
           <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="bg-pink-500 text-white p-3 rounded-full hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+            onClick={onBack}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-300 text-gray-600 transition hover:bg-gray-400 hover:text-gray-800"
+            aria-label="Back to cards"
           >
-            <Send className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
+          <div className="relative">
+            <Image
+              src={match.image}
+              alt={match.name}
+              width={56}
+              height={56}
+              className="h-14 w-14 rounded-full border-2 border-pink-200 object-cover shadow"
+            />
+            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 ring-4 ring-gray-200"></span>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-gray-900">{match.name}, {match.age}</h2>
+            <p className="text-sm text-gray-500">Online · {match.personality}</p>
+          </div>
+        </div>
+
+        {/* Messages Container */}
+        <div className="flex-1 overflow-hidden rounded-2xl border border-gray-300 bg-gray-200 p-6 shadow-lg">
+          <div className="flex h-full flex-col space-y-4 overflow-y-auto pr-2">
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs rounded-2xl px-5 py-3 text-sm shadow-md md:max-w-md ${
+                    message.sender === 'user'
+                      ? 'bg-gray-400 text-gray-900'
+                      : 'bg-gray-300 border border-gray-400 text-gray-800'
+                  }`}
+                >
+                  {message.content}
+                </div>
+              </motion.div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl bg-gray-300 border border-gray-400 px-4 py-3 shadow-md">
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.1s' }} />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-600" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Input Area */}
+        <div className="rounded-full border border-gray-300 bg-gray-200 p-2 shadow-lg">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Type your message..."
+              className="flex-1 bg-transparent px-4 py-2 text-sm text-gray-700 placeholder:text-gray-500 focus:outline-none"
+              disabled={isLoading}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-600 text-white transition hover:bg-gray-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
