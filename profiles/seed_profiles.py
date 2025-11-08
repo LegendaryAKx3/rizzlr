@@ -57,6 +57,104 @@ EXAMPLE_OPENERS = [
     "I'm not a photographer, but I can definitely picture us together"
 ]
 
+# Extensive name lists by gender
+FEMALE_NAMES = [
+    "Emma", "Olivia", "Ava", "Sophia", "Isabella", "Mia", "Charlotte", "Amelia", "Harper", "Evelyn",
+    "Abigail", "Emily", "Elizabeth", "Sofia", "Avery", "Ella", "Scarlett", "Grace", "Chloe", "Victoria",
+    "Riley", "Aria", "Lily", "Aubrey", "Zoey", "Penelope", "Lillian", "Addison", "Layla", "Natalie",
+    "Camila", "Hannah", "Brooklyn", "Zoe", "Nora", "Leah", "Savannah", "Audrey", "Claire", "Eleanor",
+    "Skylar", "Ellie", "Samantha", "Stella", "Paisley", "Violet", "Mila", "Allison", "Alexa", "Anna",
+    "Hazel", "Aaliyah", "Ariana", "Lucy", "Caroline", "Sarah", "Genesis", "Kennedy", "Sadie", "Gabriella",
+    "Madelyn", "Adeline", "Maya", "Autumn", "Aurora", "Piper", "Hailey", "Kaylee", "Ruby", "Serenity",
+    "Eva", "Naomi", "Nevaeh", "Alice", "Luna", "Bella", "Quinn", "Madeline", "Peyton", "Rylee",
+    "Mackenzie", "Jade", "Lydia", "Ivy", "Melanie", "Isla", "Reagan", "Julia", "Sophie", "Brielle",
+    "Andrea", "Gianna", "Lila", "Kinsley", "Nina", "Sienna", "Delilah", "Willow", "Rose", "Elena",
+    "Khloe", "Natalia", "Kylie", "Isabel", "Faith", "Alexandra", "Brianna", "Josephine", "Vivian", "Amy",
+    "Rachel", "Jessica", "Lauren", "Isabelle", "Valeria", "Kate", "Makayla", "Nicole", "Isabela", "Kimberly",
+    "Lyla", "Sara", "Melody", "Eliana", "Nicole", "Paige", "Rebecca", "Maria", "Mariah", "Trinity",
+    "Ryleigh", "Katelyn", "Everly", "Alexis", "Valerie", "Jasmine", "Emilia", "Margaret", "Catherine", "Liliana",
+    "Raegan", "Alina", "Iris", "June", "Freya", "Gemma", "Juliet", "Ada", "Olive", "Nora",
+    "Esther", "Margot", "Diana", "Eloise", "Vera", "Hope", "Rosie", "Phoebe", "Daisy", "Harriet"
+]
+
+MALE_NAMES = [
+    "Liam", "Noah", "Oliver", "Elijah", "James", "William", "Benjamin", "Lucas", "Henry", "Alexander",
+    "Mason", "Michael", "Ethan", "Daniel", "Jacob", "Logan", "Jackson", "Levi", "Sebastian", "Mateo",
+    "Jack", "Owen", "Theodore", "Aiden", "Samuel", "Joseph", "John", "David", "Wyatt", "Matthew",
+    "Luke", "Asher", "Carter", "Julian", "Grayson", "Leo", "Jayden", "Gabriel", "Isaac", "Lincoln",
+    "Anthony", "Hudson", "Dylan", "Ezra", "Thomas", "Charles", "Christopher", "Jaxon", "Maverick", "Josiah",
+    "Isaiah", "Andrew", "Elias", "Joshua", "Nathan", "Caleb", "Ryan", "Adrian", "Miles", "Eli",
+    "Nolan", "Christian", "Aaron", "Cameron", "Ezekiel", "Colton", "Luca", "Landon", "Hunter", "Jonathan",
+    "Santiago", "Axel", "Easton", "Cooper", "Jeremiah", "Angel", "Roman", "Connor", "Jameson", "Robert",
+    "Greyson", "Jordan", "Ian", "Carson", "Jaxson", "Leonardo", "Nicholas", "Dominic", "Austin", "Everett",
+    "Brooks", "Xavier", "Kai", "Jose", "Parker", "Adam", "Jace", "Wesley", "Kayden", "Silas",
+    "Bennett", "Declan", "Waylon", "Weston", "Evan", "Emmett", "Micah", "Ryder", "Beau", "Damian",
+    "Brayden", "Gael", "Rowan", "Harrison", "Bryson", "Sawyer", "Amir", "Kingston", "Jason", "Giovanni",
+    "Vincent", "Ayden", "Chase", "Myles", "Diego", "Nathaniel", "Legend", "Jonah", "River", "Tyler",
+    "Cole", "Braxton", "George", "Milo", "Zachary", "Ashton", "Luis", "Jasper", "Kaiden", "Adriel",
+    "Gavin", "Bentley", "Calvin", "Zion", "Juan", "Maxwell", "Max", "Ryker", "Carlos", "Emmanuel",
+    "Jayce", "Lorenzo", "Ivan", "Jude", "August", "Kevin", "Malachi", "Elliott", "Rhett", "Archer"
+]
+
+# Comprehensive interests pool
+ALL_INTERESTS = [
+    # Sports & Fitness
+    "trail running", "bouldering", "rock climbing", "pilates", "hot yoga", "CrossFit", "kickboxing", "swimming",
+    "beach volleyball", "ultimate frisbee", "soccer", "basketball", "tennis", "badminton", "pickleball",
+    "skateboarding", "longboarding", "roller skating", "ice skating", "snowboarding", "skiing", "surfing",
+    "boxing", "MMA", "jiu-jitsu", "muay thai", "capoeira", "parkour", "slacklining", "paddle boarding",
+    # Arts & Creativity
+    "film photography", "digital art", "watercolor painting", "ceramics", "pottery", "sculpting", "woodworking",
+    "embroidery", "knitting", "crocheting", "jewelry making", "candle making", "soap making", "scrapbooking",
+    "calligraphy", "lettering", "graffiti", "street art", "mural painting", "printmaking", "illustration",
+    # Food & Drink
+    "third wave coffee", "matcha lattes", "bubble tea", "craft beer", "wine tasting", "mixology", "cocktail making",
+    "sushi omakase", "ramen hopping", "taco hunting", "izakaya bars", "dim sum", "pho", "Korean BBQ", "Ethiopian food",
+    "sourdough baking", "pasta making", "fermentation", "pickling", "smoking meats", "BBQ", "meal prepping",
+    "vegan cooking", "keto baking", "Thai food", "Indian cuisine", "sushi rolling", "cheese making", "kombucha brewing",
+    # Music & Performance
+    "indie concerts", "jazz clubs", "EDM festivals", "metal shows", "punk shows", "classical concerts", "opera",
+    "karaoke", "open mic nights", "poetry slams", "improv comedy", "stand-up comedy", "theater", "musicals",
+    "DJing", "producing beats", "piano", "guitar", "drums", "ukulele", "singing", "beatboxing",
+    "bass guitar", "violin", "cello", "saxophone", "trumpet", "DJ scratching", "electronic music production",
+    # Culture & Learning
+    "museum hopping", "art galleries", "street art tours", "architecture tours", "historical sites",
+    "street festivals", "food trucks", "farmers markets", "flea markets", "vintage shopping", "thrifting", "record stores",
+    "language exchange", "learning Spanish", "learning Japanese", "learning French", "learning Korean", "Duolingo streaks",
+    "philosophy reading", "poetry writing", "creative writing", "blogging", "podcasting", "documentary watching",
+    # Nature & Outdoors
+    "houseplants", "succulents", "gardening", "urban farming", "composting", "bonsai trees",
+    "weekend road trips", "camping", "hiking", "backpacking", "van life", "travel hacking", "spontaneous adventures",
+    "sunset watching", "stargazing", "astrophotography", "nature photography", "bird watching", "foraging",
+    "kayaking", "canoeing", "fishing", "mountain biking", "trail biking", "overlanding", "geocaching",
+    # Games & Entertainment
+    "retro gaming", "board game nights", "D&D", "Magic the Gathering", "chess", "escape rooms", "trivia nights",
+    "video game speedruns", "Pokemon", "Animal Crossing", "Zelda", "Dark Souls", "indie games", "VR gaming",
+    "tabletop RPGs", "card games", "puzzle solving", "Rubik's cubes", "sudoku", "crosswords",
+    # Wellness & Mindfulness
+    "cold plunges", "sauna sessions", "meditation", "breathwork", "journaling", "bullet journaling",
+    "yoga nidra", "sound baths", "reiki", "aromatherapy", "crystal healing", "tarot reading", "astrology",
+    # Fashion & Style
+    "vintage fashion", "streetwear", "sneaker culture", "thrift flips", "upcycling", "DIY projects",
+    "minimalist wardrobe", "sustainable fashion", "Y2K fashion", "cottagecore", "dark academia", "indie fashion",
+    # Media & Pop Culture
+    "true crime podcasts", "horror movies", "anime", "manga", "graphic novels", "sci-fi books", "fantasy novels",
+    "K-dramas", "reality TV", "cooking shows", "true crime documentaries", "film analysis", "movie marathons",
+    "comic books", "webtoons", "audiobooks", "book clubs", "literary fiction", "mystery novels",
+    # Tech & Digital
+    "coding", "web development", "app development", "game development", "3D modeling", "video editing",
+    "photo editing", "digital marketing", "crypto", "NFTs", "AI art", "drone photography", "streaming",
+    # Social & Community
+    "volunteering", "community organizing", "activism", "environmental conservation", "animal rescue",
+    "mentoring", "coaching", "teaching", "tutoring", "public speaking", "networking events",
+    # Nightlife & Social
+    "techno raves", "house music", "vinyl collecting", "cassette tapes", "concert photography", "festival hopping",
+    "bar hopping", "brewery tours", "wine bars", "speakeasies", "rooftop bars", "dive bars", "live music venues",
+    # Hobbies & Collections
+    "coin collecting", "stamp collecting", "action figures", "Funko Pops", "vintage toys", "sneaker collecting",
+    "vinyl records", "rare books", "antiques", "watches", "fountain pens", "Lego building", "model trains"
+]
+
 def has_api():
     return bool(os.getenv("GROQ_API_KEY"))
 
@@ -147,18 +245,22 @@ def generate_variety_hints():
         "composition": composition
     }
 
-def llm_make_profile(idx, model):
+def llm_make_profile(idx, model, gender):
     # Construct hints for more varied prompts
     tone_hint = random.choice(TONES)
     texting_style = random.choice(TEXTING_STYLES)
     occupation_hint = random.choice(OCCUPATION_SEEDS)
     variety = generate_variety_hints()
+    
+    # Pick name, age, and interests based on gender
+    name = random.choice(FEMALE_NAMES if gender == "female" else MALE_NAMES)
+    age = random_age()
+    interests = random.sample(ALL_INTERESTS, k=3)
 
     system_msg = (
         "You generate fictional dating-app profiles for adults aged 18–23. "
         "Create engaging, specific content. Avoid public figures. "
-        "Generate a realistic full name that matches the gender (male or female only). "
-        "No city field. Keep bios short. Use natural, flirt-forward style if it fits the persona. "
+        "No city field. Keep bios SHORT - maximum 2 sentences. Use natural, flirt-forward style. "
         "Return strict JSON only with the specified fields."
     )
 
@@ -176,12 +278,13 @@ System:
 
 User:
 Create one profile. Follow this contract:
-- display_name: generate a realistic full name that clearly matches the gender
-- age: integer between {AGE_MIN} and {AGE_MAX}
-- gender: ONLY "female" or "male" (no nonbinary option)
-- keep bio to 1–2 sentences
+- id: {idx} (just the number)
+- display_name: "{name}" (already chosen)
+- age: {age} (already set)
+- gender: "{gender}" (already set)
+- interests: {interests} (already chosen - use these exact interests)
+- keep bio to MAXIMUM 2 SHORT SENTENCES, should NOT contain their name
 - no city field
-- interests: 5–8 concrete items
 - texting_style: concise description of how they text
 - image_prompt: dating-profile portrait prompt that integrates visual details
 - persona_card.voice should match texting_style
@@ -213,14 +316,14 @@ Return only a minified JSON object with these exact keys in any order:
 {schema_keys}
 
 Field details:
-"id": "profile_{idx}",
-"display_name": "generate realistic full name matching gender",
-"age": integer,
-"gender": "female|male",
+"id": {idx},
+"display_name": "{name}",
+"age": {age},
+"gender": "{gender}",
 "occupation": "short phrase",
-"interests": ["..."],
+"interests": {interests} (use these EXACT interests),
 "texting_style": "short phrase",
-"bio": "1–2 sentences, specific, flirty, engaging",
+"bio": "MAXIMUM 2 short sentences, specific and flirty - do NOT mention {name}",
 "image_prompt": "explicit, richly detailed portrait prompt that includes age appearance, gender presentation, {variety['shot_type']}, {variety['angle']}, {variety['time_of_day']}, {variety['lighting']}, {variety['background']}, {variety['outfit']}, {variety['palette']}, {variety['hair']}, {variety['expression']}, {variety['accessories']}, {variety['composition']}, realistic skin texture, shallow depth of field",
 "boundaries": {BOUNDARIES},
 "created_on": "{str(date.today())}",
@@ -240,10 +343,11 @@ Field details:
             obj = ensure_json(raw)
 
             # Post-fixes
-            obj["id"] = f"profile_{idx}"
-            obj["age"] = int(obj.get("age", random_age()))
-            if obj["age"] < AGE_MIN or obj["age"] > AGE_MAX:
-                obj["age"] = random_age()
+            obj["id"] = idx
+            obj["display_name"] = name
+            obj["gender"] = gender
+            obj["interests"] = interests
+            obj["age"] = age
             obj.setdefault("boundaries", BOUNDARIES)
             obj.setdefault("created_on", str(date.today()))
             pc = obj.get("persona_card", {})
@@ -269,24 +373,17 @@ Field details:
                     temperature=0.0
                 )
                 obj = ensure_json(fix)
-                obj["id"] = f"profile_{idx}"
+                obj["id"] = idx
+                obj["display_name"] = name
+                obj["gender"] = gender
                 return obj
             except Exception:
                 continue
     raise RuntimeError(f"Failed to create profile {idx}: {last_err}")
 
-def local_fallback(idx):
+def local_fallback(idx, gender):
     # Fallback when no API key. Short bios, varied tones and occupations.
-    g = random.choice(["female","male"])
-    
-    # Gender-appropriate names
-    if g == "female":
-        firsts = ["Maya","Elena","Zara","Nina","Ivy","Anya","Mila","Freya","Sofia","Yara","Mina","Chloe","Stella","Jade","Ruby","Iris","Hazel","Violet","Aria","Sienna","Luna"]
-    else:
-        firsts = ["Liam","Noah","Jonah","Felix","Kenji","Theo","Hugo","Ishaan","Levi","Rohan","Niko","Kai","Ezra","Jude","Finn","Asher","Elias","Oliver","Miles","Leo","Max"]
-    
-    lasts = ["Smith","Johnson","Garcia","Lopez","Nguyen","Martin","Brown","Davis","Lee","Wilson","Anderson","Taylor","Moore","Jackson","Perez","Clark","Lewis","Walker","Young","Allen","Rivera","Cruz","Ramirez","Brooks"]
-    name = f"{random.choice(firsts)} {random.choice(lasts)}"
+    name = random.choice(FEMALE_NAMES if gender == "female" else MALE_NAMES)
     age = random.randint(AGE_MIN, AGE_MAX)
     occ = random.choice(OCCUPATION_SEEDS)
     interests = random.sample([
@@ -306,16 +403,16 @@ def local_fallback(idx):
     # Build varied prompt
     v = generate_variety_hints()
     image_prompt = (
-        f"dating-app portrait, {g}, appears {age}, {v['shot_type']}, {v['angle']}, "
+        f"dating-app portrait, {gender}, appears {age}, {v['shot_type']}, {v['angle']}, "
         f"{v['time_of_day']}, {v['lighting']}, {v['background']}, outfit {v['outfit']}, "
         f"palette {v['palette']}, hair {v['hair']}, expression {v['expression']}, "
         f"accessories {v['accessories']}, {v['composition']}, realistic skin texture, shallow depth of field"
     )
     return {
-        "id": f"profile_{idx}",
+        "id": idx,
         "display_name": name,
         "age": age,
-        "gender": g,
+        "gender": gender,
         "occupation": occ,
         "interests": interests,
         "texting_style": style,
@@ -351,12 +448,11 @@ def generate_profiles(count, model, sleep_s):
 
     print(f"Generating {count} profiles...")
     for i in range(1, count + 1):
+        gender = genders[i-1]  # Pick gender FIRST
         if has_api():
-            p = llm_make_profile(i, model=model)
-            p["gender"] = genders[i-1]  # enforce split
+            p = llm_make_profile(i, model=model, gender=gender)
         else:
-            p = local_fallback(i)
-            p["gender"] = genders[i-1]
+            p = local_fallback(i, gender=gender)
         profiles.append(p)
         print_progress_bar(i, count)
         if sleep_s > 0:
