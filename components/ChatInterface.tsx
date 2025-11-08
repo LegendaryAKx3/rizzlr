@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { AIMatch, Message } from '@/types';
 import { sendMessageToAI } from '@/lib/groqClient';
 import { Send, ArrowLeft } from 'lucide-react';

@@ -1,22 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUser, useClerk, UserButton, SignedIn } from '@clerk/nextjs';
 import { aiMatches } from '@/lib/aiMatches';
-import { AIMatch } from '@/types';
+import { AIMatch, UserCard } from '@/types';
 import SwipeCard from '@/components/SwipeCard';
 import ChatInterface from '@/components/ChatInterface';
+import OnboardingFlow from '@/components/OnboardingFlow';
 import { Heart, X, Star, Info, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
+  const { isSignedIn, user } = useUser();
+  const { openSignIn } = useClerk();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matches, setMatches] = useState<AIMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<AIMatch | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [showMessagesSidebar, setShowMessagesSidebar] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [userCard, setUserCard] = useState<UserCard | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const currentMatch = aiMatches[currentIndex];
 
@@ -28,7 +34,46 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Load user card from localStorage
+  useEffect(() => {
+    if (isSignedIn && user) {
+      const savedCard = localStorage.getItem(`userCard_${user.id}`);
+      if (savedCard) {
+        setUserCard(JSON.parse(savedCard));
+      } else {
+        // User is signed in but has no card - show onboarding
+        setShowOnboarding(true);
+      }
+    } else {
+      // User signed out - reset state
+      setUserCard(null);
+      setShowOnboarding(false);
+    }
+  }, [isSignedIn, user]);
+
+  const handleOnboardingComplete = (newUserCard: UserCard) => {
+    setUserCard(newUserCard);
+    localStorage.setItem(`userCard_${user?.id}`, JSON.stringify(newUserCard));
+    setShowOnboarding(false);
+  };
+
+  const checkAuthAndOnboarding = () => {
+    if (!isSignedIn) {
+      // Programmatically open sign-in modal
+      openSignIn();
+      return false;
+    }
+    if (isSignedIn && !userCard) {
+      // User is signed in but hasn't completed onboarding
+      setShowOnboarding(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleSwipe = (direction: 'left' | 'right') => {
+    if (!checkAuthAndOnboarding()) return;
+
     if (direction === 'right') {
       setMatches([...matches, currentMatch]);
       toast.success(`It's a match with ${currentMatch.name}! 💕`, {
@@ -52,6 +97,7 @@ export default function Home() {
   };
 
   const handleStar = () => {
+    if (!checkAuthAndOnboarding()) return;
     toast('Super liked! ⭐', {
       icon: '⭐',
       duration: 1500,
@@ -59,6 +105,7 @@ export default function Home() {
   };
 
   const handleInfo = () => {
+    if (!checkAuthAndOnboarding()) return;
     toast('View full profile', {
       icon: 'ℹ️',
       duration: 1500,
@@ -66,10 +113,16 @@ export default function Home() {
   };
 
   const handleMatchClick = (match: AIMatch) => {
+    if (!checkAuthAndOnboarding()) return;
     setSelectedMatch(match);
     setShowChat(true);
     setShowMessagesSidebar(false); // Close sidebar when opening chat
   };
+
+  // Show onboarding if needed
+  if (isSignedIn && showOnboarding) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
+  }
 
   if (showChat && selectedMatch) {
     return <ChatInterface match={selectedMatch} onBack={() => setShowChat(false)} />;
@@ -77,6 +130,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen px-4 py-6 bg-gray-200 relative">
+      {/* User Button - Only show when signed in */}
+      <SignedIn>
+        <div className="fixed top-6 left-6 z-50">
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      </SignedIn>
+
       <Toaster
         position="top-center"
         toastOptions={{
@@ -117,7 +177,7 @@ export default function Home() {
                 className="fixed inset-0 bg-black/50 z-40 lg:hidden"
               />
             )}
-            
+
             {/* Sidebar */}
             <motion.aside
               initial={{ x: '100%' }}

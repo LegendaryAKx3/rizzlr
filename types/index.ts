@@ -32,3 +32,12 @@ export interface Chat {
     };
   };
 }
+
+export interface UserCard {
+  userId: string;
+  name: string;
+  age: number;
+  bio: string;
+  interests: string[];
+  imageUrl?: string;
+}
