@@ -2,8 +2,8 @@
 
 import { AIMatch } from '@/types';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import Image from 'next/image';
 import { useState } from 'react';
-import { Heart, X } from 'lucide-react';
 
 interface SwipeCardProps {
   match: AIMatch;
@@ -35,32 +35,25 @@ export default function SwipeCard({ match, onSwipe, onCardClick }: SwipeCardProp
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       onClick={onCardClick}
     >
-      <div className="relative w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white rounded-xl p-6 my-4 mx-2 shadow-xl transform transition duration-300 hover:scale-105 relative w-full h-full overflow-hidden flex flex-col">
         {/* Image */}
-        <div className="h-2/3 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-          <img
+        <div className="relative rounded-xl h-3/4 w-full overflow-hidden shadow-lg mb-4">
+          <Image
             src={match.image}
             alt={match.name}
-            className="w-48 h-48 object-cover"
+            fill
+            sizes="(max-width: 768px) 90vw, 420px"
+            className="object-cover"
           />
         </div>
 
         {/* Info */}
-        <div className="p-6 h-1/3">
-          <h2 className="text-2xl font-bold mb-1">
+        <div className="flex-1 flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-800 mb-1">
             {match.name}, {match.age}
           </h2>
-          <p className="text-gray-600 text-sm mb-3">{match.bio}</p>
-          <div className="flex flex-wrap gap-2">
-            {match.interests.slice(0, 3).map((interest) => (
-              <span
-                key={interest}
-                className="px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-xs"
-              >
-                {interest}
-              </span>
-            ))}
-          </div>
+          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{match.bio}</p>
+          <p className="text-xs text-gray-500">2 miles away</p>
         </div>
 
         {/* Swipe indicators */}
