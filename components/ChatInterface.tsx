@@ -135,28 +135,26 @@ export default function ChatInterface({ match, onBack, onMatchRemoved }: ChatInt
         `${m.sender === 'user' ? 'You' : match.name}: ${m.content}`
       ).join('\n');
 
-      const conversationHistory = [{
-        role: 'system',
-        content: `You are a dating coach giving BRIEF real-time feedback. Analyze the message they're about to send in context of the conversation. Give ONE SHORT tip (max 10 words) with an emoji. Be specific about THEIR message content. Examples:
-- "� Great! That question shows real interest"
+      const systemPrompt = `You are a dating coach giving BRIEF real-time feedback. Analyze the message they're about to send in context of the conversation. Give ONE SHORT tip (max 10 words) with an emoji. Be specific about THEIR message content. Examples:
+- "😊 Great! That question shows real interest"
 - "🤔 Too generic - be more specific about her hobby"
 - "🔥 Love the playful energy!"
 - "💡 Reference what she just said about traveling"
 - "⚠️ Too forward - dial it back a bit"
 - "✨ Perfect follow-up question!"
 
-Match personality: ${match.personality}
-Conversation style: ${match.conversationStyle}`
-      }, {
+Match personality: ${match.personality}`;
+
+      const conversationHistory = [{
         role: 'user',
         content: `Recent conversation:\n${recentMessages}\n\nThey're typing: "${text}"\n\nGive ONE brief specific tip about THIS message:`
       }];
 
-      const response = await sendMessageToAI(conversationHistory, '');
+      const response = await sendMessageToAI(conversationHistory, systemPrompt);
       return response.trim();
     } catch (error) {
       console.error('Error getting live hint:', error);
-      return "� Keep it natural and engaging!";
+      return "💬 Keep it natural and engaging!";
     }
   };
 
