@@ -21,8 +21,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={inter.variable}>
-        <body className="antialiased bg-gray-200 text-gray-900">
+      <html lang="en" className={inter.variable} suppressHydrationWarning>
+        <body className="antialiased bg-gray-200 text-gray-900" suppressHydrationWarning>
           {children}
         </body>
       </html>

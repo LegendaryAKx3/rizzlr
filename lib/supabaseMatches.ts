@@ -26,6 +26,8 @@ export interface Match {
   profile_interests?: string[];
   is_active?: boolean;
   matched_at?: string;
+  last_message_at?: string; // For sorting by conversation activity
+  last_message?: string; // Preview of last message
 }
 
 /**
@@ -165,6 +167,76 @@ export async function getActiveMatches(
     .order('matched_at', { ascending: false });
 
   return { data, error };
+}
+
+/**
+ * Get active matches for a user, sorted by most recent conversation activity
+ */
+export async function getActiveMatchesSortedByActivity(
+  userId: string
+): Promise<{ data: Match[] | null; error: any }> {
+  // Get all active matches
+  const { data: matches, error: matchError } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_active', true);
+
+  if (matchError || !matches) {
+    return { data: null, error: matchError };
+  }
+
+  // Get the most recent active conversation for each match
+  const matchesWithActivity = await Promise.all(
+    matches.map(async (match) => {
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, last_message_at')
+        .eq('user_id', userId)
+        .eq('profile_id', match.profile_id)
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      let lastMessage = '';
+      if (conversation?.id) {
+        // Get the most recent message from this conversation
+        const { data: message } = await supabase
+          .from('messages')
+          .select('content, role')
+          .eq('conversation_id', conversation.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (message) {
+          // Truncate long messages and add prefix for role
+          const prefix = message.role === 'user' ? 'You: ' : '';
+          const content = message.content.length > 50 
+            ? message.content.substring(0, 50) + '...' 
+            : message.content;
+          lastMessage = prefix + content;
+        }
+      }
+
+      return {
+        ...match,
+        last_message_at: conversation?.last_message_at || match.matched_at,
+        last_message: lastMessage,
+      };
+    })
+  );
+
+  // Sort by last_message_at, most recent first
+  matchesWithActivity.sort((a, b) => {
+    const dateA = new Date(a.last_message_at || 0).getTime();
+    const dateB = new Date(b.last_message_at || 0).getTime();
+    return dateB - dateA;
+  });
+
+  return { data: matchesWithActivity, error: null };
 }
 
 /**

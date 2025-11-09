@@ -9,6 +9,7 @@ export interface AIMatch {
   conversationStyle: string;
   opener?: string; // Random opener from opener_examples
   gender?: string; // 'male' or 'female'
+  lastMessage?: string; // Preview of last message sent
 }
 
 export interface Message {

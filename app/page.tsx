@@ -16,6 +16,7 @@ import {
   createMatch,
   hasMatched,
   getActiveMatches,
+  getActiveMatchesSortedByActivity,
   getOrCreateUserProfile,
   getPreferredGender
 } from '@/lib/supabaseMatches';
@@ -102,8 +103,8 @@ export default function Home() {
         const shuffled = shuffleArray([...filtered]);
         setFilteredProfiles(shuffled);
         
-        // Load existing matches from Supabase
-        const { data: savedMatches } = await getActiveMatches(user.id);
+        // Load existing matches from Supabase, sorted by conversation activity
+        const { data: savedMatches } = await getActiveMatchesSortedByActivity(user.id);
         if (savedMatches) {
           const matchedProfiles = savedMatches.map(match => ({
             id: match.profile_id.toString(),
@@ -114,7 +115,8 @@ export default function Home() {
             personality: '',
             image: match.profile_image || '',
             conversationStyle: '',
-            gender: match.profile_gender
+            gender: match.profile_gender,
+            lastMessage: match.last_message
           })) as AIMatch[];
           setMatches(matchedProfiles);
         }
@@ -254,9 +256,9 @@ export default function Home() {
   };
 
   const handleMatchRemoved = async () => {
-    // Reload matches after one is removed
+    // Reload matches after one is removed, sorted by activity
     if (user) {
-      const { data: savedMatches } = await getActiveMatches(user.id);
+      const { data: savedMatches } = await getActiveMatchesSortedByActivity(user.id);
       if (savedMatches) {
         const matchedProfiles = savedMatches.map(match => ({
           id: match.profile_id.toString(),
@@ -267,7 +269,8 @@ export default function Home() {
           personality: '',
           image: match.profile_image || '',
           conversationStyle: '',
-          gender: match.profile_gender
+          gender: match.profile_gender,
+          lastMessage: match.last_message
         })) as AIMatch[];
         setMatches(matchedProfiles);
       }
@@ -283,7 +286,11 @@ export default function Home() {
     return (
       <ChatInterface 
         match={selectedMatch} 
-        onBack={() => setShowChat(false)}
+        onBack={() => {
+          setShowChat(false);
+          // Refresh matches list to update sort order after chatting
+          handleMatchRemoved();
+        }}
         onMatchRemoved={handleMatchRemoved}
       />
     );
@@ -389,17 +396,21 @@ export default function Home() {
                         />
                         <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 ring-4 ring-gray-200"></span>
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900">{match.name}</h4>
-                        <p className="text-xs text-gray-700">Click to chat</p>
+                        <p className="text-xs text-gray-700 truncate">
+                          {match.lastMessage || 'Click to chat'}
+                        </p>
                       </div>
-                      <motion.span
-                        className="rounded-full bg-gray-500 px-2 py-0.5 text-xs font-medium text-white"
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                      >
-                        new
-                      </motion.span>
+                      {!match.lastMessage && (
+                        <motion.span
+                          className="rounded-full bg-gray-500 px-2 py-0.5 text-xs font-medium text-white"
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          new
+                        </motion.span>
+                      )}
                     </motion.button>
                   ))}
                 </div>
