@@ -23,6 +23,7 @@ export const aiMatches: AIMatch[] = profilesData.map((profile: any) => {
     interests: profile.interests?.slice(0, 5) || [],
     personality: profile.persona_card?.tone || 'friendly',
     image: imagePath,
+    gender: profile.gender, // Add gender field for filtering
     opener: randomOpener,
     conversationStyle: `You are ${profile.display_name}, a real ${profile.age}-year-old ${profile.occupation}. ${profile.bio}
   

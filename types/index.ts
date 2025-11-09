@@ -8,6 +8,7 @@ export interface AIMatch {
   image: string;
   conversationStyle: string;
   opener?: string; // Random opener from opener_examples
+  gender?: string; // 'male' or 'female'
 }
 
 export interface Message {

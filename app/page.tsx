@@ -7,14 +7,23 @@ import { AIMatch, UserCard } from '@/types';
 import SwipeCard from '@/components/SwipeCard';
 import ChatInterface from '@/components/ChatInterface';
 import OnboardingFlow from '@/components/OnboardingFlow';
-import { Heart, X, Star, Info, MessageCircle } from 'lucide-react';
+import { Heart, X, Star, Info, MessageCircle, Settings } from 'lucide-react';
 import Image from 'next/image';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import {
+  createMatch,
+  hasMatched,
+  getActiveMatches,
+  getOrCreateUserProfile,
+  getPreferredGender
+} from '@/lib/supabaseMatches';
 
 export default function Home() {
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matches, setMatches] = useState<AIMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<AIMatch | null>(null);
@@ -23,8 +32,10 @@ export default function Home() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [userCard, setUserCard] = useState<UserCard | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [filteredProfiles, setFilteredProfiles] = useState<AIMatch[]>(aiMatches);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
-  const currentMatch = aiMatches[currentIndex];
+  const currentMatch = filteredProfiles[currentIndex];
 
   // Check if desktop on mount
   useEffect(() => {
@@ -44,11 +55,62 @@ export default function Home() {
         // User is signed in but has no card - show onboarding
         setShowOnboarding(true);
       }
+      
+      // Initialize user profile in Supabase
+      getOrCreateUserProfile(user.id);
     } else {
       // User signed out - reset state
       setUserCard(null);
       setShowOnboarding(false);
     }
+  }, [isSignedIn, user]);
+
+  // Load user's matches from Supabase and filter profiles by preference
+  useEffect(() => {
+    const loadMatchesAndFilterProfiles = async () => {
+      if (!isSignedIn || !user) {
+        // If user is not signed in, show all profiles
+        setFilteredProfiles(aiMatches);
+        setIsLoadingMatches(false);
+        return;
+      }
+      
+      setIsLoadingMatches(true);
+      try {
+        // Get user's gender preference
+        const { data: preferredGender } = await getPreferredGender(user.id);
+        
+        // Filter profiles based on preference
+        let filtered = aiMatches;
+        if (preferredGender && preferredGender !== 'both') {
+          filtered = aiMatches.filter(profile => profile.gender === preferredGender);
+        }
+        setFilteredProfiles(filtered);
+        
+        // Load existing matches from Supabase
+        const { data: savedMatches } = await getActiveMatches(user.id);
+        if (savedMatches) {
+          const matchedProfiles = savedMatches.map(match => ({
+            id: match.profile_id.toString(),
+            name: match.profile_name,
+            age: match.profile_age || 20,
+            bio: match.profile_bio || '',
+            interests: match.profile_interests || [],
+            personality: '',
+            image: match.profile_image || '',
+            conversationStyle: '',
+            gender: match.profile_gender
+          })) as AIMatch[];
+          setMatches(matchedProfiles);
+        }
+      } catch (error) {
+        console.error('Error loading matches:', error);
+      } finally {
+        setIsLoadingMatches(false);
+      }
+    };
+
+    loadMatchesAndFilterProfiles();
   }, [isSignedIn, user]);
 
   const handleOnboardingComplete = (newUserCard: UserCard) => {
@@ -71,15 +133,45 @@ export default function Home() {
     return true;
   };
 
-  const handleSwipe = (direction: 'left' | 'right') => {
+  const handleSwipe = async (direction: 'left' | 'right') => {
     if (!checkAuthAndOnboarding()) return;
+    if (!user) return;
 
     if (direction === 'right') {
-      setMatches([...matches, currentMatch]);
-      toast.success(`It's a match with ${currentMatch.name}! 💕`, {
-        icon: '🎉',
-        duration: 2000,
-      });
+      // Check if already matched
+      const { matched } = await hasMatched(user.id, parseInt(currentMatch.id));
+      
+      if (!matched) {
+        // Save match to Supabase
+        try {
+          await createMatch(
+            user.id,
+            parseInt(currentMatch.id),
+            currentMatch.name,
+            currentMatch.age,
+            currentMatch.gender,
+            currentMatch.bio,
+            currentMatch.image,
+            currentMatch.interests
+          );
+          
+          // Add to local state
+          setMatches([...matches, currentMatch]);
+          
+          toast.success(`It's a match with ${currentMatch.name}! 💕`, {
+            icon: '🎉',
+            duration: 2000,
+          });
+        } catch (error) {
+          console.error('Error creating match:', error);
+          toast.error('Failed to save match');
+        }
+      } else {
+        toast(`You've already matched with ${currentMatch.name}!`, {
+          icon: '💕',
+          duration: 2000,
+        });
+      }
     } else {
       toast(`${currentMatch.name} is looking for someone else`, {
         icon: '👋',
@@ -88,7 +180,7 @@ export default function Home() {
     }
 
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % aiMatches.length);
+      setCurrentIndex((prev) => (prev + 1) % filteredProfiles.length);
     }, 200);
   };
 
@@ -132,8 +224,15 @@ export default function Home() {
     <div className="min-h-screen px-4 py-6 bg-gray-200 relative">
       {/* User Button - Only show when signed in */}
       <SignedIn>
-        <div className="fixed top-6 left-6 z-50">
+        <div className="fixed top-6 left-6 z-50 flex gap-3">
           <UserButton afterSignOutUrl="/" />
+          <button
+            onClick={() => router.push('/settings')}
+            className="w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg transition flex items-center justify-center"
+            title="Settings"
+          >
+            <Settings className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
       </SignedIn>
 
@@ -253,7 +352,7 @@ export default function Home() {
             </div>
 
             <div className="relative w-full mx-auto" style={{ height: '600px' }}>
-              {currentIndex < aiMatches.length ? (
+              {currentIndex < filteredProfiles.length && currentMatch ? (
                 <SwipeCard
                   key={currentMatch.id}
                   match={currentMatch}
@@ -263,7 +362,9 @@ export default function Home() {
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-white rounded-2xl shadow-2xl">
                   <div className="text-center p-8">
-                    <h3 className="text-2xl font-bold mb-4">No more matches!</h3>
+                    <h3 className="text-2xl font-bold mb-4">
+                      {isLoadingMatches ? 'Loading profiles...' : 'No more matches!'}
+                    </h3>
                     <p className="text-gray-600 mb-6">You've seen everyone. Start over?</p>
                     <button
                       onClick={() => setCurrentIndex(0)}

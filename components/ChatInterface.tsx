@@ -8,6 +8,11 @@ import { Send, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gradeConversation } from '@/lib/gradeConversation';
+import {
+  getOrCreateConversation,
+  saveMessages,
+  getConversationMessages
+} from '@/lib/supabaseConversations';
 
 interface ChatInterfaceProps {
   match: AIMatch;
@@ -15,6 +20,8 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
+  const { user } = useUser();
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -34,6 +41,59 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Initialize conversation and load existing messages
+  useEffect(() => {
+    const initConversation = async () => {
+      if (!user?.id) return;
+
+      try {
+        console.log('Initializing conversation for user:', user.id, 'profile:', match.id);
+        
+        const { data, error } = await getOrCreateConversation(
+          user.id,
+          parseInt(match.id) || 0,
+          match.name,
+          match.age,
+          match.gender
+        );
+
+        console.log('getOrCreateConversation result:', { data, error });
+
+        if (error) {
+          console.error('Error initializing conversation:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+          return;
+        }
+
+        if (data) {
+          console.log('Conversation created/found:', data.id);
+          setConversationId(data.id!);
+          
+          // Load existing messages if conversation already exists
+          const { data: existingMessages, error: msgError } = await getConversationMessages(data.id!);
+          
+          console.log('Existing messages:', { count: existingMessages?.length, error: msgError });
+          
+          if (!msgError && existingMessages && existingMessages.length > 0) {
+            // Convert Supabase messages to your Message format
+            const loadedMessages: Message[] = existingMessages.map((msg, idx) => ({
+              id: msg.id || idx.toString(),
+              content: msg.content,
+              sender: msg.role === 'user' ? 'user' : 'ai',
+              timestamp: new Date(msg.created_at || Date.now())
+            }));
+            setMessages(loadedMessages);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing conversation:', error);
+        console.error('Full error object:', error);
+      }
+    };
+
+    initConversation();
+  }, [user?.id, match.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -127,6 +187,7 @@ Conversation style: ${match.conversationStyle}`
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput('');
     setIsLoading(true);
 
@@ -136,7 +197,7 @@ Conversation style: ${match.conversationStyle}`
         content: msg.content
       }));
 
-      conversationHistory.push({ role: 'user', content: input });
+      conversationHistory.push({ role: 'user', content: userInput });
 
       const response = await sendMessageToAI(
         conversationHistory,
@@ -151,6 +212,19 @@ Conversation style: ${match.conversationStyle}`
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Save both messages to Supabase
+      if (conversationId) {
+        try {
+          await saveMessages(conversationId, [
+            { role: 'user', content: userInput },
+            { role: 'assistant', content: response }
+          ]);
+        } catch (dbError) {
+          console.error('Error saving messages to database:', dbError);
+          // Continue even if save fails - messages are already in state
+        }
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
