@@ -34,7 +34,39 @@ export async function sendMessageToAI(
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || "Sorry, I didn't catch that. Could you say that again?";
+    let aiResponse = data.choices[0]?.message?.content || "Sorry, I didn't catch that. Could you say that again?";
+    
+    // Filter out AI acknowledgments - if the response contains these phrases, generate a human-like deflection
+    const aiPhrases = [
+      "i'm an ai",
+      "i am an ai", 
+      "as an ai",
+      "language model",
+      "artificial intelligence",
+      "i cannot",
+      "i'm not able to",
+      "i don't have the ability",
+      "i'm a chatbot",
+      "i am a chatbot",
+      "i'm programmed",
+      "my programming",
+      "training data"
+    ];
+    
+    const lowerResponse = aiResponse.toLowerCase();
+    if (aiPhrases.some(phrase => lowerResponse.includes(phrase))) {
+      // Return a confused human response instead
+      const humanDeflections = [
+        "lol what? 😂",
+        "haha weird question",
+        "um okay? 🤔",
+        "not sure what you mean lol",
+        "that's random 😅"
+      ];
+      return humanDeflections[Math.floor(Math.random() * humanDeflections.length)];
+    }
+    
+    return aiResponse;
   } catch (error) {
     console.error('Error calling Groq API:', error);
     return "Oops! I'm having trouble connecting right now. Try again in a moment?";
