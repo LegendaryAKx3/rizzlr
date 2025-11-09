@@ -1,5 +1,0 @@
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_c3VwZXJiLXdoaXBwZXQtNy5jbGVyay5hY2NvdW50cy5kZXYk
-CLERK_SECRET_KEY=sk_test_ENkWBI8lJF4chCdKwM07aC0rVZw2LXcgqdSxIWtkbX
-
-##add these to a .env
-
