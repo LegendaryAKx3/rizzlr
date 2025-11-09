@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS matches (
 );
 
 -- Conversations table: stores each conversation between a user and an AI profile
+-- Updated to support multiple conversation attempts (history)
 CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL, -- Clerk user ID
@@ -54,9 +55,17 @@ CREATE TABLE IF NOT EXISTS conversations (
     
     -- Conversation state
     is_active BOOLEAN DEFAULT true,
+    is_archived BOOLEAN DEFAULT false, -- For conversation history
     last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    UNIQUE(user_id, profile_id)
+    -- Conversation grading/scoring
+    score INTEGER, -- 0-100
+    grade TEXT, -- 'S', 'A', 'B', 'C', 'D', 'F'
+    grade_feedback TEXT,
+    grade_breakdown JSONB, -- { engagement, flow, chemistry, timing }
+    graded_at TIMESTAMP WITH TIME ZONE
+    
+    -- Removed UNIQUE constraint to allow multiple conversation attempts per user-profile pair
 );
 
 -- Messages table: stores individual messages in conversations
@@ -87,6 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_profile_id ON conversations(profile_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON conversations(last_message_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conversations_user_active ON conversations(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_archived ON conversations(user_id, is_archived);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_profile_active ON conversations(user_id, profile_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_conversations_score ON conversations(score DESC);
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);

@@ -20,6 +20,16 @@ import {
   getPreferredGender
 } from '@/lib/supabaseMatches';
 
+// Fisher-Yates shuffle algorithm for randomizing array order
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function Home() {
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
@@ -32,8 +42,9 @@ export default function Home() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [userCard, setUserCard] = useState<UserCard | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [filteredProfiles, setFilteredProfiles] = useState<AIMatch[]>(aiMatches);
+  const [filteredProfiles, setFilteredProfiles] = useState<AIMatch[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [shownProfileIds, setShownProfileIds] = useState<Set<string>>(new Set());
 
   const currentMatch = filteredProfiles[currentIndex];
 
@@ -69,8 +80,9 @@ export default function Home() {
   useEffect(() => {
     const loadMatchesAndFilterProfiles = async () => {
       if (!isSignedIn || !user) {
-        // If user is not signed in, show all profiles
-        setFilteredProfiles(aiMatches);
+        // If user is not signed in, show all profiles randomized
+        const shuffled = shuffleArray([...aiMatches]);
+        setFilteredProfiles(shuffled);
         setIsLoadingMatches(false);
         return;
       }
@@ -85,7 +97,10 @@ export default function Home() {
         if (preferredGender && preferredGender !== 'both') {
           filtered = aiMatches.filter(profile => profile.gender === preferredGender);
         }
-        setFilteredProfiles(filtered);
+        
+        // Shuffle the filtered profiles
+        const shuffled = shuffleArray([...filtered]);
+        setFilteredProfiles(shuffled);
         
         // Load existing matches from Supabase
         const { data: savedMatches } = await getActiveMatches(user.id);
@@ -137,6 +152,9 @@ export default function Home() {
     if (!checkAuthAndOnboarding()) return;
     if (!user) return;
 
+    // Mark current profile as shown
+    setShownProfileIds(prev => new Set([...prev, currentMatch.id]));
+
     if (direction === 'right') {
       // Check if already matched
       const { matched } = await hasMatched(user.id, parseInt(currentMatch.id));
@@ -179,8 +197,32 @@ export default function Home() {
       });
     }
 
+    // Move to next profile, skipping any we've already shown
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % filteredProfiles.length);
+      let nextIndex = (currentIndex + 1) % filteredProfiles.length;
+      let attempts = 0;
+      const maxAttempts = filteredProfiles.length;
+      
+      // Find next profile that hasn't been shown
+      while (shownProfileIds.has(filteredProfiles[nextIndex]?.id) && attempts < maxAttempts) {
+        nextIndex = (nextIndex + 1) % filteredProfiles.length;
+        attempts++;
+      }
+      
+      // If we've shown all profiles, show message and reset
+      if (attempts >= maxAttempts) {
+        toast('You\'ve seen all available profiles! Reshuffling...', {
+          icon: '🔄',
+          duration: 2500,
+        });
+        setShownProfileIds(new Set());
+        // Reshuffle profiles
+        const reshuffled = shuffleArray([...filteredProfiles]);
+        setFilteredProfiles(reshuffled);
+        setCurrentIndex(0);
+      } else {
+        setCurrentIndex(nextIndex);
+      }
     }, 200);
   };
 
@@ -211,13 +253,40 @@ export default function Home() {
     setShowMessagesSidebar(false); // Close sidebar when opening chat
   };
 
+  const handleMatchRemoved = async () => {
+    // Reload matches after one is removed
+    if (user) {
+      const { data: savedMatches } = await getActiveMatches(user.id);
+      if (savedMatches) {
+        const matchedProfiles = savedMatches.map(match => ({
+          id: match.profile_id.toString(),
+          name: match.profile_name,
+          age: match.profile_age || 20,
+          bio: match.profile_bio || '',
+          interests: match.profile_interests || [],
+          personality: '',
+          image: match.profile_image || '',
+          conversationStyle: '',
+          gender: match.profile_gender
+        })) as AIMatch[];
+        setMatches(matchedProfiles);
+      }
+    }
+  };
+
   // Show onboarding if needed
   if (isSignedIn && showOnboarding) {
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
   if (showChat && selectedMatch) {
-    return <ChatInterface match={selectedMatch} onBack={() => setShowChat(false)} />;
+    return (
+      <ChatInterface 
+        match={selectedMatch} 
+        onBack={() => setShowChat(false)}
+        onMatchRemoved={handleMatchRemoved}
+      />
+    );
   }
 
   return (

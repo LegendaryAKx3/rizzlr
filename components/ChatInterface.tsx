@@ -4,22 +4,27 @@ import { useState, useRef, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AIMatch, Message } from '@/types';
 import { sendMessageToAI } from '@/lib/groqClient';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Trash2, RotateCcw, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gradeConversation } from '@/lib/gradeConversation';
+import toast from 'react-hot-toast';
 import {
   getOrCreateConversation,
   saveMessages,
-  getConversationMessages
+  getConversationMessages,
+  archiveAndResetConversation
 } from '@/lib/supabaseConversations';
+import { deleteMatch } from '@/lib/supabaseMatches';
+import ConversationHistory from './ConversationHistory';
 
 interface ChatInterfaceProps {
   match: AIMatch;
   onBack: () => void;
+  onMatchRemoved?: () => void;
 }
 
-export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
+export default function ChatInterface({ match, onBack, onMatchRemoved }: ChatInterfaceProps) {
   const { user } = useUser();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
@@ -35,6 +40,7 @@ export default function ChatInterface({ match, onBack }: ChatInterfaceProps) {
   const [grade, setGrade] = useState<any>(null);
   const [liveHint, setLiveHint] = useState<string>('');
   const [showLiveHint, setShowLiveHint] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -244,6 +250,94 @@ Conversation style: ${match.conversationStyle}`
     }
   };
 
+  const handleResetConversation = async () => {
+    if (!conversationId || !user?.id) return;
+
+    const confirmed = window.confirm(
+      `Reset conversation with ${match.name}? Your current chat will be saved to history with your grade.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      // Archive current conversation with grade
+      await archiveAndResetConversation(
+        conversationId,
+        grade?.score,
+        grade?.grade,
+        grade?.feedback,
+        grade?.breakdown
+      );
+
+      // Reset local state
+      setMessages([{
+        id: '1',
+        content: match.opener || `Hey! I'm ${match.name}. What's up?`,
+        sender: 'ai',
+        timestamp: new Date()
+      }]);
+      setGrade(null);
+      setConversationId(null);
+
+      // Create new conversation
+      const { data } = await getOrCreateConversation(
+        user.id,
+        parseInt(match.id) || 0,
+        match.name,
+        match.age,
+        match.gender
+      );
+
+      if (data) {
+        setConversationId(data.id!);
+      }
+
+      toast.success('Conversation reset! Previous chat saved to history.');
+    } catch (error) {
+      console.error('Error resetting conversation:', error);
+      toast.error('Failed to reset conversation');
+    }
+  };
+
+  const handleRemoveMatch = async () => {
+    if (!user?.id) return;
+
+    const confirmed = window.confirm(
+      `Remove ${match.name} from your matches? All conversations will be kept in history.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      // Archive current conversation first if it exists
+      if (conversationId) {
+        await archiveAndResetConversation(
+          conversationId,
+          grade?.score,
+          grade?.grade,
+          grade?.feedback,
+          grade?.breakdown
+        );
+      }
+
+      // Delete the match
+      await deleteMatch(user.id, parseInt(match.id) || 0);
+      
+      toast.success(`Removed ${match.name} from matches`);
+      
+      // Call the callback to refresh matches list
+      if (onMatchRemoved) {
+        onMatchRemoved();
+      }
+      
+      // Go back to main view
+      onBack();
+    } catch (error) {
+      console.error('Error removing match:', error);
+      toast.error('Failed to remove match');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-200">
       {/* Main Chat Area */}
@@ -271,6 +365,36 @@ Conversation style: ${match.conversationStyle}`
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-gray-900">{match.name}, {match.age}</h2>
             <p className="text-sm text-gray-500">Online · {match.personality}</p>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-md"
+              title="View conversation history"
+            >
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-medium">History</span>
+            </button>
+            
+            <button
+              onClick={handleResetConversation}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors shadow-md"
+              title="Reset conversation"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="text-sm font-medium">Reset</span>
+            </button>
+            
+            <button
+              onClick={handleRemoveMatch}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-md"
+              title="Remove match"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-sm font-medium">Remove</span>
+            </button>
           </div>
           
           {/* Inline Grade Badge */}
@@ -410,6 +534,18 @@ Conversation style: ${match.conversationStyle}`
         </div>
         </div>
       </div>
+
+      {/* Conversation History Modal */}
+      <AnimatePresence>
+        {showHistory && user?.id && (
+          <ConversationHistory
+            userId={user.id}
+            profileId={parseInt(match.id) || 0}
+            profileName={match.name}
+            onClose={() => setShowHistory(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
